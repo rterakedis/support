@@ -373,7 +373,7 @@ Function Import-JCUsersFromCSV ()
         {
             $UpdateParamsRaw = $UserAdd.psobject.properties | Where-Object {($_.Value -ne $Null) -and ($_.Value -ne "")} | Select-Object Name, Value
             $UpdateParams = @{}
-            
+
             foreach ($Param in $UpdateParamsRaw)
             {
                 if ($UserUpdateParams.$($Param.name))
@@ -382,9 +382,7 @@ Function Import-JCUsersFromCSV ()
                 }
 
             }
-            
-            
-            
+
             $ProgressCounter++
 
             $GroupAddProgressParams = @{
@@ -408,364 +406,139 @@ Function Import-JCUsersFromCSV ()
 
             Write-Verbose $CustomAttributes.name.count
 
-            if ($CustomAttributes.name.count -gt 1)
-            {
-                try
-                {   
+            #################
+            #################
+            #################
+
+            try
+            {  
+                if ($CustomAttributes.name.count -gt 1)
+                { 
                     $NumberOfCustomAttributes = ($CustomAttributes.name.count) / 2
 
                     $UpdateParams.Add("NumberOfCustomAttributes", $NumberOfCustomAttributes)
-
-                    $JSONParams = $UpdateParams | ConvertTo-Json
-
-                    Write-Verbose "$($JSONParams)"
-                    $NewUser = New-JCUser @UpdateParams
-
-                    if ($NewUser._id)
+                }
+                $JSONParams = $UpdateParams | ConvertTo-Json
+                Write-Verbose "$($JSONParams)"
+                $NewUser = New-JCUser @UpdateParams
+                if ($NewUser._id)
+                {
+                    $Status = 'User Created'
+                }
+                elseif (-not $NewUser._id)
+                {
+                    $Status = 'User Not Created'
+                }
+                try #User is created
+                {
+                    if ($UserAdd.SystemID)
                     {
-
-                        $Status = 'User Created'
-                    }
-
-                    elseif (-not $NewUser._id)
-                    {
-                        $Status = 'User Not Created'
-                    }
-                   
-                    try #User is created
-                    {
-                        if ($UserAdd.SystemID)
+                        if ($UserAdd.Administrator)
                         {
-
-                            if ($UserAdd.Administrator)
+                            Write-Verbose "Admin set"
+                            if ($UserAdd.Administrator -like "*True")
                             {
-
-                                if ($UserAdd.Administrator -like "*True")
-                                {
-
-                                    Write-Verbose "Admin set to true"
-
-                                    try
-                                    {
-                                        $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $true
-                                        $SystemAddStatus = $SystemAdd.Status
-                                    }
-                                    catch
-                                    {
-                                        $SystemAddStatus = $_.ErrorDetails
-                                    }
-                                }
-
-                                elseif ($UserAdd.Administrator -like "*False")
-                                {
-
-                                    Write-Verbose "Admin set to false"
-
-                                    try
-                                    {
-                                        $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $false
-                                        $SystemAddStatus = $SystemAdd.Status
-                                    }
-                                    catch
-                                    {
-                                        $SystemAddStatus = $_.ErrorDetails
-                                    }
-                                    
-                                }
-                                
-                            }
-
-                            else
-                            {
-                                
-                                Write-Verbose "No admin set"
-
+                                Write-Verbose "Admin set to true"
                                 try
                                 {
-                                    $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id
-                                    Write-Verbose  "$($SystemAdd.Status)"
+                                    $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $true
                                     $SystemAddStatus = $SystemAdd.Status
                                 }
                                 catch
                                 {
                                     $SystemAddStatus = $_.ErrorDetails
                                 }
-
+                            }
+                            elseif ($UserAdd.Administrator -like "*False")
+                            {
+                                Write-Verbose "Admin set to false"
+                                try
+                                {
+                                    $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $false
+                                    $SystemAddStatus = $SystemAdd.Status
+                                }
+                                catch
+                                {
+                                    $SystemAddStatus = $_.ErrorDetails
+                                }
                             }
                         }
-                        $CustomGroupArrayList = New-Object System.Collections.ArrayList
-
-                        $CustomGroups = $UserAdd | Get-Member | Where-Object Name -Like "*Group*" | Where-Object {$_.Definition -NotLike "*=" -and $_.Definition -NotLike "*null"} | Select-Object Name
-
-                        foreach ($Group in $CustomGroups)
+                        else
                         {
-                            $GetGroup = [pscustomobject]@{
-                                Type  = 'GroupName'
-                                Value = $UserAdd.($Group.Name)
-                            }
-
-                            $CustomGroupArrayList.Add($GetGroup) | Out-Null
-
-                        }
-
-                        $UserGroupArrayList = New-Object System.Collections.ArrayList
-
-                        foreach ($Group in $CustomGroupArrayList)
-                        {
+                            Write-Verbose "No admin set"
                             try
                             {
-
-                                $GroupAdd = Add-JCUserGroupMember -ByID -UserID $NewUser._id -GroupName $Group.value
-
-                                $FormatGroupOutput = [PSCustomObject]@{
-
-                                    'Group'  = $Group.value
-                                    'Status' = $GroupAdd.Status
-                                }
-
-                                $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
+                                $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id
+                                Write-Verbose  "$($SystemAdd.Status)"
+                                $SystemAddStatus = $SystemAdd.Status
                             }
-
                             catch
                             {
-
-                                $FormatGroupOutput = [PSCustomObject]@{
-
-                                    'Group'  = $Group.value
-                                    'Status' = $_.ErrorDetails
-                                }
-
-                                $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
+                                $SystemAddStatus = $_.ErrorDetails
                             }
                         }
                     }
-                    catch
+                    $CustomGroupArrayList = New-Object System.Collections.ArrayList
+                    $CustomGroups = $UserAdd | Get-Member | Where-Object Name -Like "*Group*" | Where-Object {$_.Definition -NotLike "*=" -and $_.Definition -NotLike "*null"} | Select-Object Name
+                    foreach ($Group in $CustomGroups)
                     {
-
+                        $GetGroup = [PSCustomObject]@{
+                            Type  = 'GroupName'
+                            Value = $UserAdd.($Group.Name)
+                        }
+                        $CustomGroupArrayList.Add($GetGroup) | Out-Null
                     }
-
-                    $FormattedResults = [PSCustomObject]@{
-
-                        'Username'  = $NewUser.username
-                        'Status'    = $Status
-                        'UserID'    = $NewUser._id
-                        'GroupsAdd' = $UserGroupArrayList
-                        'SystemID'  = $UserAdd.SystemID
-                        'SystemAdd' = $SystemAddStatus
-
+                    $UserGroupArrayList = New-Object System.Collections.ArrayList
+                    foreach ($Group in $CustomGroupArrayList)
+                    {
+                        try
+                        {
+                            $GroupAdd = Add-JCUserGroupMember -ByID -UserID $NewUser._id -GroupName $Group.value
+                            $FormatGroupOutput = [PSCustomObject]@{
+                                'Group'  = $Group.value
+                                'Status' = $GroupAdd.Status
+                            }
+                            $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
+                        }
+                        catch
+                        {
+                            $FormatGroupOutput = [PSCustomObject]@{
+                                'Group'  = $Group.value
+                                'Status' = $_.ErrorDetails
+                            }
+                            $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
+                        }
                     }
-
-                    
-
                 }
-
                 catch
                 {
-
-                    $Status = $_.ErrorDetails
-
-                    $FormattedResults = [PSCustomObject]@{
-
-                        'Username'  = $UserAdd.username
-                        'Status'    = "Not created, CSV format issue?"
-                        'UserID'    = $Null
-                        'GroupsAdd' = $Null
-                        'SystemID'  = $Null
-                        'SystemAdd' = $Null
-
-                    }
-
-                    
                 }
+                $FormattedResults = [PSCustomObject]@{
+                    'Username'  = $NewUser.username
+                    'Status'    = $Status
+                    'UserID'    = $NewUser._id
+                    'GroupsAdd' = $UserGroupArrayList
+                    'SystemID'  = $UserAdd.SystemID
+                    'SystemAdd' = $SystemAddStatus
 
-                $ResultsArrayList.Add($FormattedResults) | Out-Null
-                $SystemAddStatus = $null
-                
-
+                }
             }
-
-            else
+            catch
             {
-                try
-                {
-                    $JSONParams = $UpdateParams | ConvertTo-Json
-
-                    Write-Verbose "$($JSONParams)"
-                    
-                    $NewUser = New-JCUser @UpdateParams
-                    
-                    if ($NewUser._id)
-                    {
-
-                        $Status = 'User Created'
-                    }
-
-                    elseif (-not $NewUser._id)
-                    {
-                        $Status = 'User Not Created'
-                    }
-                   
-
-                    try #User is created
-                    {
-                        if ($UserAdd.SystemID)
-                        {
-
-                            if ($UserAdd.Administrator)
-                            {
-
-                                Write-Verbose "Admin set"
-
-                                if ($UserAdd.Administrator -like "*True")
-                                {
-
-                                    Write-Verbose "Admin set to true"
-
-                                    try
-                                    {
-                                        $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $true
-                                        $SystemAddStatus = $SystemAdd.Status
-                                    }
-                                    catch
-                                    {
-                                        $SystemAddStatus = $_.ErrorDetails
-                                    }
-                                }
-
-                                elseif ($UserAdd.Administrator -like "*False")
-                                {
-
-                                    Write-Verbose "Admin set to false"
-
-                                    try
-                                    {
-                                        $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id -Administrator $false
-                                        $SystemAddStatus = $SystemAdd.Status
-                                    }
-                                    catch
-                                    {
-                                        $SystemAddStatus = $_.ErrorDetails
-                                    }
-                                    
-                                }
-                                    
-                                
-                            }
-
-                            else
-                            {
-                                
-                                Write-Verbose "No admin set"
-
-                                try
-                                {
-                                    $SystemAdd = Add-JCSystemUser -SystemID $UserAdd.SystemID -UserID $NewUser._id
-                                    Write-Verbose  "$($SystemAdd.Status)"
-                                    $SystemAddStatus = $SystemAdd.Status
-                                }
-                                catch
-                                {
-                                    $SystemAddStatus = $_.ErrorDetails
-                                }
-
-                            }
-                        
-
-
-                        }
-
-                        $CustomGroupArrayList = New-Object System.Collections.ArrayList
-
-                        $CustomGroups = $UserAdd | Get-Member | Where-Object Name -Like "*Group*" | Where-Object {$_.Definition -NotLike "*=" -and $_.Definition -NotLike "*null"} | Select-Object Name
-                        
-                        foreach ($Group in $CustomGroups)
-                        {
-                            $GetGroup = [pscustomobject]@{
-                                Type  = 'GroupName'
-                                Value = $UserAdd.($Group.Name)
-                            }
-
-                            $CustomGroupArrayList.Add($GetGroup) | Out-Null
-
-                        }
-
-                        $UserGroupArrayList = New-Object System.Collections.ArrayList
-
-                        foreach ($Group in $CustomGroupArrayList)
-                        {
-                            try
-                            {
-
-                                $GroupAdd = Add-JCUserGroupMember -ByID -UserID $NewUser._id -GroupName $Group.value
-
-                                $FormatGroupOutput = [PSCustomObject]@{
-
-                                    'Group'  = $Group.value
-                                    'Status' = $GroupAdd.Status
-                                }
-
-                                $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
-                            }
-
-                            catch
-                            {
-
-                                $FormatGroupOutput = [PSCustomObject]@{
-
-                                    'Group'  = $Group.value
-                                    'Status' = $_.ErrorDetails
-                                }
-
-                                $UserGroupArrayList.Add($FormatGroupOutput) | Out-Null
-                            }
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-
-                    $FormattedResults = [PSCustomObject]@{
-
-                        'Username'  = $NewUser.username
-                        'Status'    = $Status
-                        'UserID'    = $NewUser._id
-                        'GroupsAdd' = $UserGroupArrayList
-                        'SystemID'  = $UserAdd.SystemID
-                        'SystemAdd' = $SystemAddStatus
-
-                    }
-
-
-
-
+                $Status = $_.ErrorDetails
+                $FormattedResults = [PSCustomObject]@{
+                    'Username'  = $UserAdd.username
+                    'Status'    = "Not created, CSV format issue? $Status"
+                    'UserID'    = $Null
+                    'GroupsAdd' = $Null
+                    'SystemID'  = $Null
+                    'SystemAdd' = $Null
                 }
-
-                catch
-                {
-
-
-                    $FormattedResults = [PSCustomObject]@{
-
-                        'Username'  = $UserAdd.username
-                        'Status'    = "$($_.ErrorDetails)"
-                        'UserID'    = $Null
-                        'GroupsAdd' = $Null
-                        'SystemID'  = $Null
-                        'SystemAdd' = $Null
-
-                    }
-
-
-                }
-
-                $ResultsArrayList.Add($FormattedResults) | Out-Null
-                $SystemAddStatus = $null
-            
             }
+            $ResultsArrayList.Add($FormattedResults) | Out-Null
+            $SystemAddStatus = $null
         }
     }
-
     end
     {
         return $ResultsArrayList
