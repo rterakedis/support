@@ -74,7 +74,7 @@ Function Import-JCUsersFromCSV ()
         $UserUpdateParams.Add("sudo", "sudo")
         $UserUpdateParams.Add("unix_guid", "unix_guid")
         $UserUpdateParams.Add("password_never_expires", "password_never_expires")
-        
+
         Write-Verbose "$($PSCmdlet.ParameterSetName)"
 
         if ($PSCmdlet.ParameterSetName -eq 'GUI')
@@ -106,7 +106,7 @@ Function Import-JCUsersFromCSV ()
             {
                 $UserUpdateParams.Add($attr.name, $attr.name)
             }
-            
+
             Write-Host ""
             Write-Host -BackgroundColor Green -ForegroundColor Black "Validating $($NewUsers.count) Usernames"
 
@@ -211,12 +211,10 @@ Function Import-JCUsersFromCSV ()
                 Write-Host ""
                 Write-Host -BackgroundColor Green -ForegroundColor Black "Validating $($SystemCount.count) Systems"
                 $SystemCheck = Get-Hash_SystemID_HostName
-    
                 foreach ($User in $SystemCount)
                 {
                     if (($User.SystemID).length -gt 1)
                     {
-    
                         if ($SystemCheck.ContainsKey($User.SystemID))
                         {
                             Write-Verbose "$($User.SystemID) exists"
@@ -228,20 +226,13 @@ Function Import-JCUsersFromCSV ()
                     }
                     else {Write-Verbose "No system"}
                 }
-    
                 $Permissions = $NewUsers.Administrator | Where-Object Length -gt 1 | Select-Object -unique
-    
                 foreach ($Value in $Permissions)
                 {
-    
                     if ( ($Value -notlike "*true" -and $Value -notlike "*false") )
                     {
-    
                         Write-Warning "Administrator must be a boolean value and set to either '`$True/True' or '`$False/False' please correct value: $Value " 
-    
-                    
                     }
-    
                 }
 
                 Write-Host -BackgroundColor Green -ForegroundColor Black "System check complete"
