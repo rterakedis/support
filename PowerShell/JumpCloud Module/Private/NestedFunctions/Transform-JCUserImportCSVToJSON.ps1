@@ -8,7 +8,7 @@ Function Transform-JCUserImportCSVToJSON ()
         [Parameter(Mandatory,
             ValueFromPipelineByPropertyName = $True)]
         [string]
-        $firstname,
+        $firstname,  
 
         [Parameter(Mandatory,
             ValueFromPipelineByPropertyName = $True)]
@@ -389,9 +389,7 @@ Function Transform-JCUserImportCSVToJSON ()
     }
     end
     {
-        $JSONResults = $NewUserObjectArray | ConvertTo-Json -Depth 5
-
-        return $JSONResults
+        return $NewUserObjectArray
     }
 
 }

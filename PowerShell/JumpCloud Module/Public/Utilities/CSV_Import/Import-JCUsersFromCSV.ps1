@@ -27,61 +27,83 @@ Function Import-JCUsersFromCSV ()
 
     begin
     {
-        $UserUpdateParams = @{}
-        $UserUpdateParams.Add("Username", "Username")
-        $UserUpdateParams.Add("FirstName", "FirstName")
-        $UserUpdateParams.Add("LastName", "LastName")
-        $UserUpdateParams.Add("Email", "Email")
-        $UserUpdateParams.Add("Password", "Password")
-        $UserUpdateParams.Add("middlename", "middlename")
-        $UserUpdateParams.Add("preferredName", "preferredName")
-        $UserUpdateParams.Add("jobTitle", "jobTitle")
-        $UserUpdateParams.Add("employeeIdentifier", "employeeIdentifier")
-        $UserUpdateParams.Add("department", "department")
-        $UserUpdateParams.Add("costCenter", "costCenter")
-        $UserUpdateParams.Add("company", "company")
-        $UserUpdateParams.Add("employeeType", "employeeType")
-        $UserUpdateParams.Add("description", "description")
-        $UserUpdateParams.Add("location", "location")
-        $UserUpdateParams.Add("work_streetAddress", "work_streetAddress")
-        $UserUpdateParams.Add("work_poBox", "work_poBox")
-        $UserUpdateParams.Add("work_locality", "work_locality")
-        $UserUpdateParams.Add("work_region", "work_region")
-        $UserUpdateParams.Add("work_city", "work_city")
-        $UserUpdateParams.Add("work_state", "work_state")
-        $UserUpdateParams.Add("work_postalCode", "work_postalCode")
-        $UserUpdateParams.Add("work_country", "work_country")
-        $UserUpdateParams.Add("home_poBox", "home_poBox")
-        $UserUpdateParams.Add("home_locality", "home_locality")
-        $UserUpdateParams.Add("home_region", "home_region")
-        $UserUpdateParams.Add("home_city", "home_city")
-        $UserUpdateParams.Add("home_state", "home_state")
-        $UserUpdateParams.Add("home_postalCode", "home_postalCode")
-        $UserUpdateParams.Add("home_country", "home_country")
-        $UserUpdateParams.Add("home_streetAddress", "home_streetAddress")
-        $UserUpdateParams.Add("mobile_number", "mobile_number")
-        $UserUpdateParams.Add("home_number", "home_number")
-        $UserUpdateParams.Add("work_number", "work_number")
-        $UserUpdateParams.Add("work_mobile_number", "work_mobile_number")
-        $UserUpdateParams.Add("work_fax_number", "work_fax_number")
-        $UserUpdateParams.Add("account_locked", "account_locked")
-        $UserUpdateParams.Add("allow_public_key", "allow_public_key")
-        $UserUpdateParams.Add("enable_managed_uid", "enable_managed_uid")
-        $UserUpdateParams.Add("enable_user_portal_multifactor", "enable_user_portal_multifactor")
-        $UserUpdateParams.Add("externally_managed", "externally_managed")
-        $UserUpdateParams.Add("ldap_binding_user", "ldap_binding_user")
-        $UserUpdateParams.Add("passwordless_sudo", "passwordless_sudo")
-        $UserUpdateParams.Add("sudo", "sudo")
-        $UserUpdateParams.Add("unix_guid", "unix_guid")
-        $UserUpdateParams.Add("password_never_expires", "password_never_expires")
+        $UserParams = @{}
+
+        # New Users
+
+        $NewUsers = Import-Csv -Path $CSVFilePath
+
+        # Hash table of user params
+
+        # Capture Customer Attributes From New User Import Object
+
+        $CustomAttributes = $NewUsers | Get-Member | Where-Object Name -Like "*Attribute*" | Select-Object Name
+
+        # Add Custom Attributes To UserParams Hash
+
+        foreach ($attr in $CustomAttributes )
+        {
+            $UserParams.Add($attr.name, $attr.name)
+        }
+
+        # Add All JumpCloud User Attributes To UserParams Hash
+
+        $UserParams.Add("Username", "Username")
+        $UserParams.Add("FirstName", "FirstName")
+        $UserParams.Add("LastName", "LastName")
+        $UserParams.Add("Email", "Email")
+        $UserParams.Add("Password", "Password")
+        $UserParams.Add("middlename", "middlename")
+        $UserParams.Add("preferredName", "preferredName")
+        $UserParams.Add("jobTitle", "jobTitle")
+        $UserParams.Add("employeeIdentifier", "employeeIdentifier")
+        $UserParams.Add("department", "department")
+        $UserParams.Add("costCenter", "costCenter")
+        $UserParams.Add("company", "company")
+        $UserParams.Add("employeeType", "employeeType")
+        $UserParams.Add("description", "description")
+        $UserParams.Add("location", "location")
+        $UserParams.Add("work_streetAddress", "work_streetAddress")
+        $UserParams.Add("work_poBox", "work_poBox")
+        $UserParams.Add("work_locality", "work_locality")
+        $UserParams.Add("work_region", "work_region")
+        $UserParams.Add("work_city", "work_city")
+        $UserParams.Add("work_state", "work_state")
+        $UserParams.Add("work_postalCode", "work_postalCode")
+        $UserParams.Add("work_country", "work_country")
+        $UserParams.Add("home_poBox", "home_poBox")
+        $UserParams.Add("home_locality", "home_locality")
+        $UserParams.Add("home_region", "home_region")
+        $UserParams.Add("home_city", "home_city")
+        $UserParams.Add("home_state", "home_state")
+        $UserParams.Add("home_postalCode", "home_postalCode")
+        $UserParams.Add("home_country", "home_country")
+        $UserParams.Add("home_streetAddress", "home_streetAddress")
+        $UserParams.Add("mobile_number", "mobile_number")
+        $UserParams.Add("home_number", "home_number")
+        $UserParams.Add("work_number", "work_number")
+        $UserParams.Add("work_mobile_number", "work_mobile_number")
+        $UserParams.Add("work_fax_number", "work_fax_number")
+        $UserParams.Add("account_locked", "account_locked")
+        $UserParams.Add("allow_public_key", "allow_public_key")
+        $UserParams.Add("enable_managed_uid", "enable_managed_uid")
+        $UserParams.Add("enable_user_portal_multifactor", "enable_user_portal_multifactor")
+        $UserParams.Add("externally_managed", "externally_managed")
+        $UserParams.Add("ldap_binding_user", "ldap_binding_user")
+        $UserParams.Add("passwordless_sudo", "passwordless_sudo")
+        $UserParams.Add("sudo", "sudo")
+        $UserParams.Add("unix_guid", "unix_guid")
+        $UserParams.Add("password_never_expires", "password_never_expires")
+
+
+
 
         Write-Verbose "$($PSCmdlet.ParameterSetName)"
 
         if ($PSCmdlet.ParameterSetName -eq 'GUI')
         {
-
             Write-Verbose 'Verifying JCAPI Key'
-            if ($JCAPIKEY.length -ne 40) {Connect-JConline}
+            if ($JCAPIKEY.length -ne 40) {Connect-JCOnline}
 
             $Banner = @"
        __                          ______ __                   __
@@ -97,63 +119,42 @@ Function Import-JCUsersFromCSV ()
             Write-Host $Banner -ForegroundColor Green
             Write-Host ""
 
-            $NewUsers = Import-Csv -Path $CSVFilePath
 
-            $CustomAttributes = $NewUsers | Get-Member | Where-Object Name -Like "*Attribute*" | Select-Object Name
-
-
-            foreach ($attr in $CustomAttributes )
-            {
-                $UserUpdateParams.Add($attr.name, $attr.name)
-            }
 
             Write-Host ""
             Write-Host -BackgroundColor Green -ForegroundColor Black "Validating $($NewUsers.count) Usernames"
 
-            $ExistingUsernameCheck = Get-Hash_UserName_ID
+            $ExistingUsernameCheck = $NewUsers | Confirm-UniqueUsername
 
-            foreach ($User in $NewUsers)
+            foreach ($User in $ExistingUsernameCheck)
             {
-                if ($ExistingUsernameCheck.ContainsKey($User.Username))
-                {
-                    Write-Warning "A user with username: $($User.Username) already exists this user will not be created." 
-                }
-                else
-                {
-                    Write-Verbose "$($User.Username) does not exist"
-                }
+          
+                Write-Warning "A user with username: $($User.Username) already exists this user will not be created. To resolve create user with a unique username." 
+                
             }
 
+            $UsernameDupCSVCheck = $NewUsers | Group-Object Username
 
-            $UsernameDup = $NewUsers | Group-Object Username
-
-            ForEach ($U in $UsernameDup )
+            ForEach ($U in $UsernameDupCSVCheck )
             {
                 if ($U.count -gt 1)
                 {
-
-                    Write-Warning "Duplicate username for username $($U.name) in import file. Usernames must be unique. To resolve eliminate the duplicate username and then retry import." 
+                    Write-Warning "Duplicate username for username $($U.name) in import file. Usernames must be unique. To resolve eliminate the duplicate username and then retry import."
                 }
             }
-
 
             Write-Host -BackgroundColor Green -ForegroundColor Black "Username check complete"
             Write-Host ""
 
             Write-Host -BackgroundColor Green -ForegroundColor Black "Validating $($NewUsers.count) Emails Addresses"
 
-            $ExistingEmailCheck = Get-Hash_Email_Username
+            $ExistingEmailCheck =  $NewUsers | Confirm-UniqueEmail
 
             foreach ($User in $NewUsers)
             {
-                if ($ExistingEmailCheck.ContainsKey($User.email))
-                {
-                    Write-Warning "The user $($ExistingEmailCheck.($User.email)) has the email address: $($User.email) $($User.username) will not be created."
-                }
-                else
-                {
-                    Write-Verbose "$($User.email) does not exist"
-                }
+              
+                Write-Warning "The email address: $($User.email) is use.  To resolve create user with a unique email address."
+               
             }
 
             $EmailDup = $NewUsers | Group-Object Email
@@ -176,18 +177,13 @@ Function Import-JCUsersFromCSV ()
                 Write-Host ""
                 Write-Host -BackgroundColor Green -ForegroundColor Black "Validating $($employeeIdentifierCheck.employeeIdentifier.Count) employeeIdentifiers"
 
-                $ExistingEmployeeIdentifierCheck = Get-Hash_employeeIdentifier_username
+                $ExistingEmployeeIdentifierCheck = $NewUsers | Confirm-UniqueEmployeeID
 
-                foreach ($User in $employeeIdentifierCheck)
+                foreach ($User in $ExistingEmployeeIdentifierCheck)
                 {
-                    if ($ExistingEmployeeIdentifierCheck.ContainsKey($User.employeeIdentifier))
-                    {
-                        Write-Warning "The user $($ExistingEmployeeIdentifierCheck.($User.employeeIdentifier)) has the employeeIdentifier: $($User.employeeIdentifier). User $($User.username) will not be created."
-                    }
-                    else
-                    {
-                        Write-Verbose "$($User.employeeIdentifier) does not exist"
-                    }
+       
+                    Write-Warning "The employeeIdentifier $($User.employeeIdentifier) is in use.  To resolve update user with a unique employeeIdentifier."
+                    
                 }
 
                 $employeeIdentifierDup = $employeeIdentifierCheck | Group-Object employeeIdentifier
@@ -339,20 +335,14 @@ Function Import-JCUsersFromCSV ()
 
         elseif ($PSCmdlet.ParameterSetName -eq 'force')
         {
-
-            $NewUsers = Import-Csv -Path $CSVFilePath
-
-            $CustomAttributes = $NewUsers | Get-Member | Where-Object Name -Like "*Attribute*" | Select-Object Name
-
-
-            foreach ($attr in $CustomAttributes )
-            {
-                $UserUpdateParams.Add($attr.name, $attr.name)
-            }
+            Write-Verbose 'Verifying JCAPI Key'
+            if ($JCAPIKEY.length -ne 40) {Connect-JCOnline}
             $ResultsArrayList = New-Object System.Collections.ArrayList
             $NumberOfNewUsers = $NewUsers.email.count
 
         }
+
+        $BulkUpdateUserArray = New-Object System.Collections.ArrayList
 
     } #begin block end
 
@@ -362,19 +352,45 @@ Function Import-JCUsersFromCSV ()
 
         foreach ($UserAdd in $NewUsers)
         {
+            ## Select only CSV columns that contain values
+
             $UpdateParamsRaw = $UserAdd.psobject.properties | Where-Object {($_.Value -ne $Null) -and ($_.Value -ne "")} | Select-Object Name, Value
+
             $UpdateParams = @{}
 
             foreach ($Param in $UpdateParamsRaw)
             {
-                if ($UserUpdateParams.$($Param.name))
+                ## Validate and add user creation parameters from column data (Not group / System information)
+
+                if ($UserParams.$($Param.name))
                 {
                     $UpdateParams.Add($Param.name, $Param.value)
                 }
-
             }
 
-            $ProgressCounter++
+            $CustomAttributes = $UserAdd | Get-Member | Where-Object Name -Like "*Attribute*" | Where-Object {$_.Definition -NotLike "*=" -and $_.Definition -NotLike "*null"} | Select-Object Name
+
+            Write-Verbose $CustomAttributes.name.count
+
+            if ($CustomAttributes.name.count -gt 1)
+            { 
+                $NumberOfCustomAttributes = ($CustomAttributes.name.count) / 2
+
+                $UpdateParams.Add("NumberOfCustomAttributes", $NumberOfCustomAttributes)
+            }
+            
+            $UserObject = [pscustomobject]$UpdateParams | Transform-JCUserImportCSVToJSON
+
+            $BulkUpdateUserArray.Add($UserObject) | Out-Null
+
+        }
+
+        $JSONBulkData = $BulkUpdateUserArray | ConvertTo-Json -Depth 5
+            
+
+            <#
+            
+             $ProgressCounter++
 
             $GroupAddProgressParams = @{
 
@@ -385,6 +401,10 @@ Function Import-JCUsersFromCSV ()
             }
 
             Write-Progress @GroupAddProgressParams
+            
+            #>
+
+           
 
             $NewUser = $Null
             $Status = $Null
@@ -393,25 +413,21 @@ Function Import-JCUsersFromCSV ()
             $FormatGroupOutput = $Null
             $CustomGroupArrayList = $Null
 
-            $CustomAttributes = $UserAdd | Get-Member | Where-Object Name -Like "*Attribute*" | Where-Object {$_.Definition -NotLike "*=" -and $_.Definition -NotLike "*null"} | Select-Object Name
-
-            Write-Verbose $CustomAttributes.name.count
 
             #################
             #################
             #################
 
-            try
-            {  
-                if ($CustomAttributes.name.count -gt 1)
-                { 
-                    $NumberOfCustomAttributes = ($CustomAttributes.name.count) / 2
+            
 
-                    $UpdateParams.Add("NumberOfCustomAttributes", $NumberOfCustomAttributes)
-                }
+
+     
+            <#
                 $JSONParams = $UpdateParams | ConvertTo-Json
                 Write-Verbose "$($JSONParams)"
                 $NewUser = New-JCUser @UpdateParams
+
+
                 if ($NewUser._id)
                 {
                     $Status = 'User Created'
@@ -529,9 +545,23 @@ Function Import-JCUsersFromCSV ()
             $ResultsArrayList.Add($FormattedResults) | Out-Null
             $SystemAddStatus = $null
         }
+
+#>
+          
     }
     end
+
+    
     {
-        return $ResultsArrayList
+        return $BulkUpdateUserArray
+        # return $ResultsArrayList
     }
 }
+
+#Import-JCUsersFromCSV -CSVFilePath '/Users/sreed/Desktop/JCUserImport - Demo .csv' -force
+
+$PSObj = Import-JCUsersFromCSV -CSVFilePath '/Users/sreed/Git/support/PowerShell/JumpCloud Module/test/csv_files/import/ImportExample_Pester_Tests_1.1.0.csv'-force
+
+$JSONOb = $PSObj | ConvertTo-Json -Depth 5
+
+Invoke-JCUserBulk -Json $JSONOb
