@@ -65,13 +65,23 @@ Function Invoke-JCUserBulk ()
             # Review job status.
             $Uri_BulkUsersResults = $Url_Template_BulkUsersResults -f $JCUrlBasePath, $Results_BulkUsers.jobId
             Write-Verbose ('Connecting to: ' + $Uri_BulkUsersResults)
-            $Results_BulkUsersResults = Invoke-JCApiGet -Url:($Uri_BulkUsersResults)
-            # Results to output.
-            $Results = $Results_BulkUsersResults
-            If ($Results.status -ne 'finished')
-            {
-                Write-Error ('Bulk new user import ' + $Results.status + '. See results below.')
+            Do {
+                Start-Sleep -Milliseconds:(10)
+                $Results_BulkUsersResults = Invoke-JCApiGet -Url:($Uri_BulkUsersResults)
+                # Results to output.
+                $Result = $Results_BulkUsersResults
+                #Timeout break
+            } Until ('pending' -notin $Result.status)
+
+            $FinalResults = @()
+            ForEach ($ResultRecord In $Result) {
+                $ResultRecordUserName = $ResultRecord.meta.SystemUser.username
+                $FinalResults += $ResultRecord | Select-Object @{Name = 'UserName'; Expression = {$ResultRecordUserName}},
+                @{Name = 'jobId'; Expression = {$Results_BulkUsers.jobId}},
+                *
             }
+            $Results += $FinalResults
+
         }
         Else
         {

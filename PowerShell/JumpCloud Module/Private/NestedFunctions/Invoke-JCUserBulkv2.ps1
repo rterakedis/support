@@ -1,4 +1,4 @@
-Function Invoke-JCUserBulk () {
+Function Invoke-JCUserBulkv2 () {
     [CmdletBinding()]
     param
     (
